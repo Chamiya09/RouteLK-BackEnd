@@ -1,3 +1,12 @@
+const dns = require('dns');
+
+// Fallback to Google / Cloudflare public DNS to resolve MongoDB Atlas SRV records on Windows
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {
+  // Ignore if unsupported
+}
+
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
