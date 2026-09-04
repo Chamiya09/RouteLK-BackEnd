@@ -52,6 +52,18 @@ const bookingSchema = new mongoose.Schema(
       required: [true, 'Total fare is required'],
       min: [0, 'Total fare cannot be negative'],
     },
+    passengerName: {
+      type: String,
+      trim: true,
+    },
+    passengerPhone: {
+      type: String,
+      trim: true,
+    },
+    passengerEmail: {
+      type: String,
+      trim: true,
+    },
     status: {
       type: String,
       enum: {
@@ -59,6 +71,15 @@ const bookingSchema = new mongoose.Schema(
         message: 'Status must be either CONFIRMED or CANCELLED',
       },
       default: 'CONFIRMED',
+    },
+    cancelledAt: {
+      type: Date,
+      default: null,
+    },
+    cancellationReason: {
+      type: String,
+      trim: true,
+      default: null,
     },
   },
   {

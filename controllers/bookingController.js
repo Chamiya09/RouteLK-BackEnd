@@ -99,6 +99,9 @@ const createBooking = async (req, res, next) => {
       passengerCount,
       farePerSeat,
       totalFare,
+      passengerName: (req.body.passengerName || req.user.name || '').trim(),
+      passengerPhone: (req.body.passengerPhone || req.user.phone || '').trim(),
+      passengerEmail: (req.body.passengerEmail || req.user.email || '').trim(),
       status: 'CONFIRMED',
     });
 
@@ -121,6 +124,9 @@ const createBooking = async (req, res, next) => {
         passengerCount: booking.passengerCount,
         farePerSeat: booking.farePerSeat,
         totalFare: booking.totalFare,
+        passengerName: booking.passengerName,
+        passengerPhone: booking.passengerPhone,
+        passengerEmail: booking.passengerEmail,
         status: booking.status,
         createdAt: booking.createdAt,
       },
@@ -230,6 +236,8 @@ const cancelBooking = async (req, res, next) => {
     }
 
     booking.status = 'CANCELLED';
+    booking.cancelledAt = new Date();
+    booking.cancellationReason = (req.body.reason || 'Requested by passenger').trim();
     await booking.save();
 
     res.status(200).json({
