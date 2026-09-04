@@ -10,12 +10,32 @@ const busRoutes = require('./routes/busRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const User = require('./models/User');
 
 // Load environment variables
 dotenv.config();
 
 // Connect to MongoDB
-connectDB();
+connectDB().then(async () => {
+  // Ensure default fixed admin account always exists
+  try {
+    const admin = await User.findOne({ email: 'admin@routelk.lk' });
+    if (!admin) {
+      await User.create({
+        name: 'System Admin',
+        email: 'admin@routelk.lk',
+        password: 'admin123',
+        phone: '0771112233',
+        role: 'admin',
+      });
+      console.log('Fixed admin account initialized: admin@routelk.lk / admin123');
+    } else {
+      console.log('Fixed admin account verified: admin@routelk.lk');
+    }
+  } catch (err) {
+    console.error('Admin verification error:', err.message);
+  }
+});
 
 const app = express();
 
