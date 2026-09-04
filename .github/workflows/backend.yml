@@ -26,4 +26,5 @@ jobs:
       - name: Syntax & startup verification
         run: |
           node -e "console.log('✅ Backend dependencies and Node environment verified successfully')"
-          npm test --if-present
+          npm test
+
