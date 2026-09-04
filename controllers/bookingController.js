@@ -275,10 +275,13 @@ const getBookingsByBus = async (req, res, next) => {
       });
     }
 
-    const { travelDate } = req.query;
+    const { travelDate, status } = req.query;
     const query = { busId: bus._id };
     if (travelDate) {
       query.travelDate = travelDate;
+    }
+    if (status && status !== 'ALL') {
+      query.status = status.toUpperCase();
     }
 
     const bookings = await Booking.find(query)
@@ -295,19 +298,108 @@ const getBookingsByBus = async (req, res, next) => {
   }
 };
 
-// @desc    Get all bookings
+// @desc    Get all bookings with filtering & pagination
 // @route   GET /api/bookings
 // @access  Private (Admin only)
 const getAllBookings = async (req, res, next) => {
   try {
-    const bookings = await Booking.find()
-      .populate('userId', 'name email phone')
-      .populate('busId', 'busNumber operatorName from to departureTime arrivalTime')
-      .sort({ createdAt: -1 });
+    const {
+      travelDate,
+      status,
+      busId,
+      search,
+      page = 1,
+      limit = 50,
+    } = req.query;
+
+    const query = {};
+
+    if (travelDate) {
+      query.travelDate = travelDate;
+    }
+
+    if (status && status !== 'ALL') {
+      query.status = status.toUpperCase();
+    }
+
+    if (busId) {
+      query.busId = busId;
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      query.$or = [
+        { bookingId: { $regex: q, $options: 'i' } },
+        { passengerName: { $regex: q, $options: 'i' } },
+        { passengerPhone: { $regex: q, $options: 'i' } },
+      ];
+    }
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10) || 50));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [totalCount, bookings, allMatchingSummary] = await Promise.all([
+      Booking.countDocuments(query),
+      Booking.find(query)
+        .populate('userId', 'name email phone')
+        .populate('busId', 'busNumber operatorName from to departureTime arrivalTime')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum),
+      Booking.aggregate([
+        { $match: query },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: {
+              $sum: {
+                $cond: [{ $eq: ['$status', 'CONFIRMED'] }, '$totalFare', 0],
+              },
+            },
+            totalSeatsBooked: {
+              $sum: {
+                $cond: [{ $eq: ['$status', 'CONFIRMED'] }, '$passengerCount', 0],
+              },
+            },
+            confirmedCount: {
+              $sum: {
+                $cond: [{ $eq: ['$status', 'CONFIRMED'] }, 1, 0],
+              },
+            },
+            cancelledCount: {
+              $sum: {
+                $cond: [{ $eq: ['$status', 'CANCELLED'] }, 1, 0],
+              },
+            },
+          },
+        },
+      ]),
+    ]);
+
+    const summary = allMatchingSummary[0] || {
+      totalRevenue: 0,
+      totalSeatsBooked: 0,
+      confirmedCount: 0,
+      cancelledCount: 0,
+    };
 
     res.status(200).json({
       success: true,
       count: bookings.length,
+      pagination: {
+        total: totalCount,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(totalCount / limitNum),
+        hasMore: skip + bookings.length < totalCount,
+      },
+      summary: {
+        totalRevenue: summary.totalRevenue,
+        totalSeatsBooked: summary.totalSeatsBooked,
+        confirmedBookings: summary.confirmedCount,
+        cancelledBookings: summary.cancelledCount,
+      },
       data: bookings,
     });
   } catch (error) {
