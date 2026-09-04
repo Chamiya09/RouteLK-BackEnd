@@ -315,6 +315,65 @@ const getAllBookings = async (req, res, next) => {
   }
 };
 
+// @desc    Verify ticket validity by booking reference ID
+// @route   GET /api/bookings/verify/:bookingId
+// @access  Public (Conductors, passengers, ticket checkers)
+const verifyBookingTicket = async (req, res, next) => {
+  try {
+    const { bookingId } = req.params;
+
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking ID is required for verification',
+      });
+    }
+
+    const booking = await Booking.findOne({
+      bookingId: bookingId.toUpperCase().trim(),
+    })
+      .populate('busId', 'busNumber operatorName from to departureTime arrivalTime busType')
+      .populate('userId', 'name phone');
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        valid: false,
+        message: `No booking found for reference code: ${bookingId}`,
+      });
+    }
+
+    const bus = booking.busId;
+    const isCancelled = booking.status === 'CANCELLED';
+
+    res.status(200).json({
+      success: true,
+      valid: !isCancelled,
+      verificationStatus: isCancelled ? 'INVALID_CANCELLED' : 'VALID_ACTIVE',
+      ticket: {
+        bookingId: booking.bookingId,
+        status: booking.status,
+        passengerName: booking.passengerName || (booking.userId ? booking.userId.name : 'Valued Passenger'),
+        passengerPhone: booking.passengerPhone || (booking.userId ? booking.userId.phone : '—'),
+        busNumber: bus ? bus.busNumber : '—',
+        operatorName: bus ? bus.operatorName : '—',
+        busType: bus ? bus.busType : '—',
+        from: bus ? bus.from : '—',
+        to: bus ? bus.to : '—',
+        departureTime: bus ? bus.departureTime : '—',
+        arrivalTime: bus ? bus.arrivalTime : '—',
+        travelDate: booking.travelDate,
+        seats: booking.seats,
+        seatCount: booking.seats.length,
+        totalFare: booking.totalFare,
+        issuedAt: booking.createdAt,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createBooking,
   getMyBookings,
@@ -322,5 +381,6 @@ module.exports = {
   cancelBooking,
   getBookingsByBus,
   getAllBookings,
+  verifyBookingTicket,
 };
 

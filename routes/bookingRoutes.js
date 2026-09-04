@@ -7,11 +7,15 @@ const {
   cancelBooking,
   getBookingsByBus,
   getAllBookings,
+  verifyBookingTicket,
 } = require('../controllers/bookingController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
 
 const router = express.Router();
+
+// Public conductor / passenger ticket verification endpoint
+router.get('/verify/:bookingId', verifyBookingTicket);
 
 // Validation for creating booking
 const bookingValidation = [
