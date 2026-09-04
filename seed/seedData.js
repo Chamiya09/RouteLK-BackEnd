@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
+const dns = require('dns');
 const dotenv = require('dotenv');
+
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {}
 const User = require('../models/User');
 const Bus = require('../models/Bus');
 const Booking = require('../models/Booking');
