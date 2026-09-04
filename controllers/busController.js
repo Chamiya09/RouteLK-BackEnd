@@ -7,7 +7,9 @@ const Booking = require('../models/Booking');
 // @access  Public
 const getAllBuses = async (req, res, next) => {
   try {
-    const buses = await Bus.find({ isActive: true })
+    const filter = req.query.all === 'true' ? {} : { isActive: true };
+
+    const buses = await Bus.find(filter)
       .populate('ownerId', 'name email phone')
       .sort({ createdAt: -1 });
 
@@ -25,6 +27,7 @@ const getAllBuses = async (req, res, next) => {
       totalSeats: bus.totalSeats,
       isActive: bus.isActive,
       owner: bus.ownerId,
+      createdAt: bus.createdAt,
     }));
 
     res.status(200).json({
@@ -284,7 +287,7 @@ const createBus = async (req, res, next) => {
       fare,
       totalSeats,
       isActive: isActive !== undefined ? isActive : true,
-      ownerId: req.user._id,
+      ownerId: req.body.ownerId || req.user._id,
     });
 
     res.status(201).json({

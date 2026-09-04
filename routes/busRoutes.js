@@ -71,7 +71,7 @@ router.get('/:id', getBusById);
 router.get('/:id/seats', getBusSeatAvailability);
 
 // Protected mutation routes
-router.post('/', protect, authorize('owner'), busValidationRules, createBus);
+router.post('/', protect, authorize('owner', 'admin'), busValidationRules, createBus);
 router.put('/:id', protect, authorize('owner', 'admin'), updateBus);
 router.delete('/:id', protect, authorize('owner', 'admin'), deleteBus);
 
