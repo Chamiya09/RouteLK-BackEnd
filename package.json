@@ -16,5 +16,14 @@
   "bugs": {
     "url": "https://github.com/Chamiya09/RouteLK-BackEnd/issues"
   },
-  "homepage": "https://github.com/Chamiya09/RouteLK-BackEnd#readme"
+  "homepage": "https://github.com/Chamiya09/RouteLK-BackEnd#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mongoose": "^9.9.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
 }
